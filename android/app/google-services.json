@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "997897806633",
+    "project_id": "cure-app-ddfd9",
+    "storage_bucket": "cure-app-ddfd9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:997897806633:android:d2a8ef602ceb7aff9acd38",
+        "android_client_info": {
+          "package_name": "com.example.cure_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRYWd5v-do4DNmovzppyHnzPM71JPr0bU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
