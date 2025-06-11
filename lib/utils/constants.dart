@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
-// تعريف ألوان التطبيق الرئيسية
-const Color kPrimaryColor = Color(0xFF6d73ff); // أزرق بنفسجي
-const Color kAccentColor = Color(0xFFadfa7d); // أخضر فاتح/ليموني
+const Color kPrimaryColor = Color(0xFF6d73ff);
+const Color kAccentColor = Color(0xFFadfa7d);
 
-// تعريف المسارات المسماة للتنقل بين الشاشات
 const String splashRoute = '/';
 const String authCheckRoute = '/authCheck';
 const String loginRoute = '/login';
@@ -16,15 +14,14 @@ const String checkoutRoute = '/checkout';
 const String ordersRoute = '/orders';
 const String profileRoute = '/profile';
 const String editProfileRoute = '/editProfile';
+const String nurseHomeRoute = '/nurseHome';
 
-// تعريف التعداد (Enum) لأنواع مقدمي الخدمة المتاحة
 enum ServiceProviderType {
-  unspecified, // غير محدد
-  nurseMale, // ممرض (ذكر)
-  nurseFemale, // ممرضة (أنثى)
+  unspecified,
+  nurseMale,
+  nurseFemale,
 }
 
-// إضافة امتداد (Extension) لـ ServiceProviderType لتحويل قيم التعداد إلى نصوص عربية
 extension ServiceProviderTypeExtension on ServiceProviderType {
   String toArabicString() {
     switch (this) {

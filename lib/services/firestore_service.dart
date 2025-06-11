@@ -1,5 +1,3 @@
-// lib/services/firestore_service.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart' as firestore_package;
 import 'package:cure_app/models/order.dart';
 import 'package:cure_app/models/service.dart';
@@ -9,7 +7,7 @@ class FirestoreService {
   final firestore_package.FirebaseFirestore _db =
       firestore_package.FirebaseFirestore.instance;
 
-  // --- دوال المستخدم ---
+  // USER
   Future<void> addUser(UserModel user) async {
     await _db
         .collection('users')
@@ -21,7 +19,6 @@ class FirestoreService {
         .set(user);
   }
 
-  // **** تم تعديل هذه الدالة ****
   Future<UserModel?> getUser(String uid) async {
     final doc = await _db
         .collection('users')
@@ -38,7 +35,7 @@ class FirestoreService {
     await _db.collection('users').doc(uid).update(data);
   }
 
-  // --- دوال الخدمات والطلبات ---
+  // SERVICES
   Stream<List<Service>> getServices() {
     return _db
         .collection('services')
@@ -50,14 +47,46 @@ class FirestoreService {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
+  // ORDERS
   Future<void> addOrder(Order order) async {
     await _db.collection('orders').add(order.toFirestore());
+  }
+
+  Future<void> updateOrderStatus(
+      String orderId, Map<String, dynamic> dataToUpdate) async {
+    await _db.collection('orders').doc(orderId).update(dataToUpdate);
   }
 
   Stream<List<Order>> getUserOrders(String userId) {
     return _db
         .collection('orders')
         .where('userId', isEqualTo: userId)
+        .orderBy('orderDate', descending: true)
+        .withConverter<Order>(
+          fromFirestore: Order.fromFirestore,
+          toFirestore: (Order order, options) => order.toFirestore(),
+        )
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Stream<List<Order>> getPendingOrders() {
+    return _db
+        .collection('orders')
+        .where('status', isEqualTo: 'pending')
+        .orderBy('orderDate', descending: true)
+        .withConverter<Order>(
+          fromFirestore: Order.fromFirestore,
+          toFirestore: (Order order, options) => order.toFirestore(),
+        )
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  Stream<List<Order>> getOrdersForNurse(String nurseId) {
+    return _db
+        .collection('orders')
+        .where('nurseId', isEqualTo: nurseId)
         .orderBy('orderDate', descending: true)
         .withConverter<Order>(
           fromFirestore: Order.fromFirestore,

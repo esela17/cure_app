@@ -1,8 +1,7 @@
-// lib/providers/auth_provider.dart
-
 import 'dart:io';
 import 'package:cure_app/models/user_model.dart';
 import 'package:cure_app/services/firestore_service.dart';
+import 'package:cure_app/services/notification_service.dart';
 import 'package:cure_app/services/storage_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -12,13 +11,13 @@ class AuthProvider with ChangeNotifier {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirestoreService _firestoreService = FirestoreService();
   final StorageService _storageService = StorageService();
+  final NotificationService _notificationService = NotificationService();
 
   User? _currentUser;
   UserModel? _currentUserProfile;
   bool _isLoading = false;
   String? _errorMessage;
 
-  // The constructor is now empty and doesn't require any arguments
   AuthProvider() {
     _firebaseAuth.authStateChanges().listen(_onAuthStateChanged);
   }
@@ -33,6 +32,9 @@ class AuthProvider with ChangeNotifier {
     _currentUser = user;
     if (user != null) {
       await fetchCurrentUserProfile();
+      if (_errorMessage == null) {
+        await _initNotificationsForUser(user.uid);
+      }
     } else {
       _currentUserProfile = null;
     }
@@ -42,13 +44,61 @@ class AuthProvider with ChangeNotifier {
   Future<void> fetchCurrentUserProfile() async {
     if (_currentUser != null) {
       try {
-        _currentUserProfile =
-            await _firestoreService.getUser(_currentUser!.uid);
-        _errorMessage = null;
+        final userProfile = await _firestoreService.getUser(_currentUser!.uid);
+        if (userProfile != null) {
+          _currentUserProfile = userProfile;
+          _errorMessage = null;
+        } else {
+          _errorMessage = "User profile document not found in Firestore.";
+        }
       } catch (e) {
-        _errorMessage = "Failed to fetch profile data: $e";
+        _errorMessage = "An error occurred while fetching profile: $e";
       }
+    }
+  }
+
+  Future<void> _initNotificationsForUser(String uid) async {
+    try {
+      await _notificationService.requestPermission();
+      final token = await _notificationService.getFcmToken();
+      if (token != null && currentUserProfile?.fcmToken != token) {
+        await _firestoreService.updateUser(uid, {'fcmToken': token});
+      }
+    } catch (e) {
+      print("Error initializing notifications: $e");
+      _errorMessage = "Failed to initialize notifications.";
+    }
+  }
+
+  Future<void> updateAvailability(bool available) async {
+    if (_currentUser == null) return;
+    try {
+      await _firestoreService.updateUser(
+        _currentUser!.uid,
+        {'isAvailable': available},
+      );
+      await fetchCurrentUserProfile();
+    } catch (e) {
+      _errorMessage = "Failed to update availability: $e";
       notifyListeners();
+    }
+  }
+
+  Future<bool> updateUserProfile(Map<String, dynamic> data) async {
+    if (_currentUser == null) return false;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _firestoreService.updateUser(_currentUser!.uid, data);
+      await fetchCurrentUserProfile();
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = "Failed to update data.";
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 
@@ -73,24 +123,6 @@ class AuthProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
-    }
-  }
-
-  Future<bool> updateUserProfile(Map<String, dynamic> data) async {
-    if (_currentUser == null) return false;
-    _isLoading = true;
-    notifyListeners();
-    try {
-      await _firestoreService.updateUser(_currentUser!.uid, data);
-      await fetchCurrentUserProfile();
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = "Failed to update data.";
-      _isLoading = false;
-      notifyListeners();
-      return false;
     }
   }
 

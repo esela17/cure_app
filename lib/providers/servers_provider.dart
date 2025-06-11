@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cure_app/models/service.dart'; // تأكد من اسم المجلد هنا (cure_app أو cure)
-import 'package:cure_app/services/firestore_service.dart'; // تأكد من اسم المجلد هنا
+import 'package:cure_app/models/service.dart';
+import 'package:cure_app/services/firestore_service.dart';
 
 class ServicesProvider with ChangeNotifier {
   final FirestoreService _firestoreService;
@@ -9,20 +9,25 @@ class ServicesProvider with ChangeNotifier {
   String? _errorMessage;
 
   ServicesProvider(this._firestoreService) {
-    _firestoreService.getServices().listen((services) {
-      _availableServices = services;
-      _isLoading = false;
-      notifyListeners();
-    });
+    _fetchServices();
   }
 
   List<Service> get availableServices => _availableServices;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  void fetchServices() {
+  void _fetchServices() {
     _isLoading = true;
-    _errorMessage = null;
     notifyListeners();
+    _firestoreService.getServices().listen((services) {
+      _availableServices = services;
+      _isLoading = false;
+      _errorMessage = null;
+      notifyListeners();
+    }, onError: (error) {
+      _errorMessage = "Failed to load services: $error";
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 }

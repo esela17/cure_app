@@ -1,5 +1,3 @@
-// lib/screens/profile_screen.dart
-
 import 'package:cure_app/providers/auth_provider.dart';
 import 'package:cure_app/utils/constants.dart';
 import 'package:cure_app/widgets/loading_indicator.dart';
@@ -8,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,23 +14,18 @@ class ProfileScreen extends StatelessWidget {
       builder: (context, authProvider, child) {
         final userProfile = authProvider.currentUserProfile;
 
-        // متغير لتخزين الواجهة التي سيتم عرضها
         Widget body;
 
-        // إذا كانت بيانات الملف الشخصي لم تصل بعد
         if (authProvider.currentUser != null && userProfile == null) {
-          // تحقق أولاً من وجود رسالة خطأ
           if (authProvider.errorMessage != null) {
             body = ErrorMessage(
                 message:
                     "فشل تحميل الملف الشخصي: ${authProvider.errorMessage!}",
                 onRetry: () => authProvider.fetchCurrentUserProfile());
           } else {
-            // إذا لم يكن هناك خطأ، فهي لا تزال قيد التحميل
             body = const LoadingIndicator();
           }
         } else if (userProfile != null) {
-          // إذا تم جلب البيانات بنجاح، اعرض محتوى الصفحة
           body = Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -138,7 +131,6 @@ class ProfileScreen extends StatelessWidget {
             ),
           );
         } else {
-          // حالة غير متوقعة
           body = const Center(child: Text("غير مسجل الدخول."));
         }
 
