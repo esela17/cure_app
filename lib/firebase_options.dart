@@ -6,7 +6,14 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
-
+/// Example:
+/// ```dart
+/// import 'firebase_options.dart';
+/// // ...
+/// await Firebase.initializeApp(
+///   options: DefaultFirebaseOptions.currentPlatform,
+/// );
+/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -57,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '997897806633',
     projectId: 'cure-app-ddfd9',
     storageBucket: 'cure-app-ddfd9.firebasestorage.app',
+    iosClientId: '997897806633-5ni700nv2jmak77tmsprsshft6kvn0me.apps.googleusercontent.com',
     iosBundleId: 'com.example.cureApp',
   );
 
@@ -66,6 +74,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '997897806633',
     projectId: 'cure-app-ddfd9',
     storageBucket: 'cure-app-ddfd9.firebasestorage.app',
+    iosClientId: '997897806633-5ni700nv2jmak77tmsprsshft6kvn0me.apps.googleusercontent.com',
     iosBundleId: 'com.example.cureApp',
   );
 

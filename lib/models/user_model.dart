@@ -1,37 +1,38 @@
-// lib/models/user_model.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
-  final String id; //  User UID from Firebase Auth
+  final String id;
   final String name;
   final String email;
   final String phone;
-  final String role; // e.g., 'patient', 'nurse'
+  final String role;
   final String? profileImageUrl;
+  final bool isAvailable;
+  final String? fcmToken; // <-- إضافة جديدة
 
   UserModel({
     required this.id,
     required this.name,
     required this.email,
     required this.phone,
-    this.role = 'patient', // Default role
+    this.role = 'patient',
     this.profileImageUrl,
+    this.isAvailable = true,
+    this.fcmToken, // <-- إضافة جديدة
   });
 
-  // Method to convert a UserModel instance to a map for Firestore
   Map<String, dynamic> toFirestore() {
     return {
-      if (name.isNotEmpty) 'name': name,
-      if (email.isNotEmpty) 'email': email,
-      if (phone.isNotEmpty) 'phone': phone,
-      if (role.isNotEmpty) 'role': role,
-      if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'role': role,
+      'profileImageUrl': profileImageUrl,
+      'isAvailable': isAvailable,
+      'fcmToken': fcmToken, // <-- إضافة جديدة
     };
   }
 
-  // **** تم تعديل هذه الدالة ****
-  // A factory constructor to create a UserModel from a Firestore document
   factory UserModel.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     SnapshotOptions? options,
@@ -44,6 +45,8 @@ class UserModel {
       phone: data?['phone'] ?? '',
       role: data?['role'] ?? 'patient',
       profileImageUrl: data?['profileImageUrl'],
+      isAvailable: data?['isAvailable'] ?? true,
+      fcmToken: data?['fcmToken'], // <-- إضافة جديدة
     );
   }
 }

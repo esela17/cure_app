@@ -19,7 +19,35 @@ class Service {
     this.safetyScore,
   });
 
-  // تحويل بيانات Firestore إلى كائن Service
+  // --- This is the new method to convert a Service object to a Map ---
+  // It will be used when saving an Order to Firestore.
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'price': price,
+      'imageUrl': imageUrl,
+      'description': description,
+      'durationMinutes': durationMinutes,
+      'safetyScore': safetyScore,
+    };
+  }
+
+  // --- This method allows creating a Service from a Map ---
+  // We use this when reading an Order from Firestore.
+  factory Service.fromMap(Map<String, dynamic> map) {
+    return Service(
+      id: map['id'] ?? '',
+      name: map['name'] ?? '',
+      price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      imageUrl: map['imageUrl'] ?? '',
+      description: map['description'] ?? '',
+      durationMinutes: map['durationMinutes'] ?? 0,
+      safetyScore: map['safetyScore'],
+    );
+  }
+
+  // This factory converts a Firestore document into a Service object
   factory Service.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     SnapshotOptions? options,
@@ -36,7 +64,7 @@ class Service {
     );
   }
 
-  // تحويل كائن Service إلى Map ليتم حفظه في Firestore
+  // This method converts a Service object to be saved as a main document in Firestore
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,

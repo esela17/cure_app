@@ -1,17 +1,13 @@
-// lib/app.dart
-
-import 'package:cure_app/providers/servers_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:cure_app/providers/auth_provider.dart';
 import 'package:cure_app/providers/cart_provider.dart';
 import 'package:cure_app/providers/orders_provider.dart';
-import 'package:cure_app/services/auth_service.dart';
+import 'package:cure_app/providers/servers_provider.dart';
+import 'package:cure_app/screens/nurse/nurse_home_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cure_app/services/firestore_service.dart';
 import 'package:cure_app/services/storage_service.dart';
 import 'package:cure_app/utils/constants.dart';
-
-// استيراد الشاشات
 import 'package:cure_app/splash_screen.dart';
 import 'package:cure_app/auth/auth_check.dart';
 import 'package:cure_app/auth/login_screen.dart';
@@ -21,44 +17,39 @@ import 'package:cure_app/screens/cart_screen.dart';
 import 'package:cure_app/screens/profile_screen.dart';
 import 'package:cure_app/screens/orders_screen.dart';
 import 'package:cure_app/screens/edit_profile_screen.dart';
+import 'package:cure_app/providers/nurse_provider.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // إنشاء مثيلات لخدماتك الأساسية هنا.
-    final authService = AuthService();
-    final firestoreService = FirestoreService();
-    final storageService = StorageService();
-
     return MultiProvider(
       providers: [
-        // توفير الخدمات الأساسية
-        Provider<AuthService>(create: (_) => authService),
-        Provider<FirestoreService>(create: (_) => firestoreService),
-        Provider<StorageService>(create: (_) => storageService),
-
-        // توفير مديري الحالة (ChangeNotifiers)
+        Provider<FirestoreService>(create: (_) => FirestoreService()),
+        Provider<StorageService>(create: (_) => StorageService()),
         ChangeNotifierProvider<AuthProvider>(
           create: (context) => AuthProvider(),
         ),
         ChangeNotifierProvider<ServicesProvider>(
-          create: (context) => ServicesProvider(firestoreService),
+          create: (context) =>
+              ServicesProvider(context.read<FirestoreService>()),
         ),
         ChangeNotifierProvider<CartProvider>(
           create: (context) => CartProvider(
-            firestoreService,
-            Provider.of<AuthProvider>(context, listen: false),
+            context.read<FirestoreService>(),
+            context.read<AuthProvider>(),
           ),
         ),
         ChangeNotifierProvider<OrdersProvider>(
           create: (context) => OrdersProvider(
-            firestoreService,
-            Provider.of<AuthProvider>(context, listen: false),
+            context.read<FirestoreService>(),
+            context.read<AuthProvider>(),
           ),
         ),
-        // إضافة الـ Provider الخاص بالممرض
+        ChangeNotifierProvider<NurseProvider>(
+          create: (context) => NurseProvider(context.read<FirestoreService>()),
+        ),
       ],
       child: MaterialApp(
         title: 'Cure',
@@ -83,22 +74,6 @@ class MyApp extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10)),
             ),
           ),
-          textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(
-              foregroundColor: kPrimaryColor,
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colors.grey),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kPrimaryColor, width: 2),
-            ),
-            labelStyle: const TextStyle(color: Colors.black54),
-          ),
         ),
         initialRoute: splashRoute,
         routes: {
@@ -111,6 +86,7 @@ class MyApp extends StatelessWidget {
           ordersRoute: (context) => const OrdersScreen(),
           profileRoute: (context) => const ProfileScreen(),
           editProfileRoute: (context) => const EditProfileScreen(),
+          nurseHomeRoute: (context) => const NurseHomeScreen(),
         },
       ),
     );
