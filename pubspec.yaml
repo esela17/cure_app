@@ -1,0 +1,72 @@
+name: cure_app
+description: "A new Flutter project for Cure app."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.6.0 <4.0.0' # هذا النطاق يسمح باستخدام Dart 3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+
+
+  connectivity_plus: ^6.0.3
+  permission_handler: ^11.0.1
+  flutter_local_notifications: ^17.0.0
+  audioplayers: ^5.2.1
+  geolocator: ^11.0.0
+  google_maps_flutter: ^2.6.0
+  google_sign_in: ^6.2.1
+  shared_preferences: ^2.2.2
+  url_launcher: ^6.2.5
+    # Firebase
+  firebase_core: ^3.13.1
+  firebase_auth: ^5.5.4
+  cloud_firestore: ^5.6.8
+  firebase_messaging: ^15.2.6 # تم إضافة هذه الحزمة
+  firebase_storage: ^12.4.6
+
+  # إدارة الحالة
+  provider: ^6.1.2
+
+  # أدوات واجهة المستخدم
+  flutter_rating_bar: ^4.0.0+1 # تم إضافة هذه الحزمة
+  image_picker: ^1.1.0 # تم إضافة هذه الحزمة
+
+  # أيقونات
+  cupertino_icons: ^1.0.8
+
+  # التنسيقات (مثل DateFormat)
+  intl: ^0.20.2 # تم تحديث إصدارها
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+  flutter_lints: ^5.0.0
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "lib/assets/2.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "lib/assets/2.png"
+    background_color: "#6d73ff"
+    theme_color: "#6d73ff"
+  windows:
+    generate: true
+    image_path: "lib/assets/2.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "lib/assets/2.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/assets/icons/
+    - lib/assets/
