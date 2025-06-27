@@ -1,1 +1,37 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"cure-app-ddfd9","appId":"1:997897806633:android:d2a8ef602ceb7aff9acd38","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"cure-app-ddfd9","configurations":{"web":"1:997897806633:web:3a1a01e9d1082bc59acd38"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "cure-app-ddfd9",
+          "appId": "1:997897806633:android:d2a8ef602ceb7aff9acd38",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "cure-app-ddfd9",
+          "configurations": {
+            "web": "1:997897806633:web:3a1a01e9d1082bc59acd38"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+      
+      ]
+    }
+  ]
+}

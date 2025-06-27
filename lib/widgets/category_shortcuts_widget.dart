@@ -4,8 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class CategoryShortcutsWidget extends StatelessWidget {
   final List<CategoryShortcut> categories;
-  const CategoryShortcutsWidget({Key? key, required this.categories})
-      : super(key: key);
+  const CategoryShortcutsWidget({super.key, required this.categories});
 
   Future<void> _launchUrl(String urlString) async {
     final Uri url = Uri.parse(urlString);

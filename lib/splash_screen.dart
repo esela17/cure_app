@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
             child: Scaffold(
               backgroundColor: _backgroundAnimation.value ?? Colors.white,
               body: Center(
-                child: Container(
+                child: SizedBox(
                   width: logoSize,
                   height: logoSize,
                   child: Image.asset(

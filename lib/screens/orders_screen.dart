@@ -100,6 +100,8 @@ class _OrdersScreenState extends State<OrdersScreen>
       extendBodyBehindAppBar: true,
       appBar: _buildGlassAppBar(),
       body: Container(
+        width: double.infinity, // <-- أضف هذا السطر
+        height: double.infinity,
         decoration: _buildGradientBackground(),
         child: SafeArea(
           child: Column(
@@ -140,7 +142,7 @@ class _OrdersScreenState extends State<OrdersScreen>
   PreferredSizeWidget _buildGlassAppBar() {
     return AppBar(
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color.fromARGB(0, 143, 40, 40),
       flexibleSpace: ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
@@ -658,8 +660,9 @@ class _OrdersScreenState extends State<OrdersScreen>
       ),
       child: Text(
         _getStatusText(status),
-        style: TextStyle(
-          color: color,
+        style: const TextStyle(
+          // يمكنك إضافة const هنا لتحسين الأداء
+          color: Colors.white, // <-- هذا هو التعديل الوحيد المطلوب
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
@@ -750,7 +753,10 @@ class _OrdersScreenState extends State<OrdersScreen>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                    colors: [
+                      Color.fromARGB(255, 89, 138, 244),
+                      Color.fromARGB(255, 130, 255, 113)
+                    ],
                   ),
                 ),
                 child: const Icon(Icons.attach_money,

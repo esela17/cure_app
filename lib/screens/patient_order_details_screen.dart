@@ -12,8 +12,7 @@ import 'dart:ui';
 
 class PatientOrderDetailsScreen extends StatefulWidget {
   final Order order;
-  const PatientOrderDetailsScreen({Key? key, required this.order})
-      : super(key: key);
+  const PatientOrderDetailsScreen({super.key, required this.order});
 
   @override
   State<PatientOrderDetailsScreen> createState() =>
@@ -24,27 +23,33 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
     with TickerProviderStateMixin {
   late AnimationController _slideController;
   late AnimationController _fadeController;
+  late AnimationController _pulseController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(0, 0.5),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
-      curve: Curves.easeOutCubic,
+      curve: Curves.elasticOut,
     ));
 
     _fadeAnimation = Tween<double>(
@@ -55,26 +60,41 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
       curve: Curves.easeInOut,
     ));
 
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+
     _slideController.forward();
     _fadeController.forward();
+    _pulseController.repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _slideController.dispose();
     _fadeController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 360;
+    final isMediumScreen = size.width >= 360 && size.width < 400;
     final firestoreService =
         Provider.of<FirestoreService>(context, listen: false);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: _buildGlassAppBar(),
+      appBar: _buildGlassAppBar(context),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: _buildGradientBackground(),
         child: SafeArea(
           child: FadeTransition(
@@ -82,12 +102,15 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
             child: SlideTransition(
               position: _slideAnimation,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 16.0 : 20.0,
+                  vertical: 20.0,
+                ),
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 20),
+                    SizedBox(height: isSmallScreen ? 16 : 20),
 
                     // قسم تفاصيل الممرض (يظهر فقط إذا تم قبول الطلب)
                     if (widget.order.nurseId != null)
@@ -96,28 +119,28 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
                         builder: (context, snapshot) {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
-                            return _buildLoadingCard();
+                            return _buildLoadingCard(isSmallScreen);
                           }
                           if (!snapshot.hasData || snapshot.data == null) {
                             return _buildErrorCard(
-                                'لا يمكن تحميل بيانات الممرض');
+                                'لا يمكن تحميل بيانات الممرض', isSmallScreen);
                           }
                           final nurse = snapshot.data!;
-                          return _buildNurseCard(nurse);
+                          return _buildNurseCard(nurse, isSmallScreen);
                         },
                       ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: isSmallScreen ? 20 : 24),
 
                     // قسم تفاصيل الطلب
-                    _buildOrderDetailsCard(),
+                    _buildOrderDetailsCard(isSmallScreen),
 
-                    const SizedBox(height: 30),
+                    SizedBox(height: isSmallScreen ? 24 : 30),
 
                     // زر تقييم الخدمة
                     if (widget.order.status == 'completed' &&
                         !widget.order.isRated)
-                      _buildRatingButton(),
+                      _buildRatingButton(isSmallScreen),
                   ],
                 ),
               ),
@@ -128,27 +151,32 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
     );
   }
 
-  PreferredSizeWidget _buildGlassAppBar() {
+  PreferredSizeWidget _buildGlassAppBar(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 360;
+
     return AppBar(
       elevation: 0,
       backgroundColor: Colors.transparent,
+      toolbarHeight: isSmallScreen ? 56 : 60,
       flexibleSpace: ClipRRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
+                  Colors.white.withOpacity(0.35),
                   Colors.white.withOpacity(0.25),
                   Colors.white.withOpacity(0.15),
                 ],
               ),
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
                 ),
               ),
             ),
@@ -159,29 +187,45 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
         'تفاصيل الطلب',
         style: TextStyle(
           color: Colors.white,
-          fontSize: 22,
+          fontSize: isSmallScreen ? 20 : 22,
           fontWeight: FontWeight.bold,
           shadows: [
             Shadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withOpacity(0.4),
               offset: const Offset(0, 2),
-              blurRadius: 4,
+              blurRadius: 8,
             ),
           ],
         ),
       ),
       leading: Container(
-        margin: const EdgeInsets.all(8),
+        margin: EdgeInsets.all(isSmallScreen ? 6 : 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white.withOpacity(0.2),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
+          borderRadius: BorderRadius.circular(15),
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.3),
+              Colors.white.withOpacity(0.1),
+            ],
           ),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.4),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back_ios_rounded,
+            color: Colors.white,
+            size: isSmallScreen ? 20 : 22,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -194,12 +238,12 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          const Color.fromARGB(255, 98, 116, 255),
-          const Color.fromARGB(255, 140, 146, 255),
-          const Color.fromARGB(255, 131, 148, 255),
-          const Color.fromARGB(255, 166, 174, 244),
+          const Color(0xFF667eea),
+          const Color(0xFF764ba2),
+          const Color(0xFF89609e),
+          const Color(0xFFa8edea),
         ],
-        stops: const [0.0, 0.3, 0.7, 1.0],
+        stops: const [0.0, 0.35, 0.7, 1.0],
       ),
     );
   }
@@ -208,40 +252,42 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
     required Widget child,
     EdgeInsetsGeometry? padding,
     EdgeInsetsGeometry? margin,
+    bool isSmallScreen = false,
   }) {
     return Container(
-      margin: margin ?? const EdgeInsets.only(bottom: 20),
+      margin: margin ?? EdgeInsets.only(bottom: isSmallScreen ? 16 : 20),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 18 : 24),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
           child: Container(
-            padding: padding ?? const EdgeInsets.all(20),
+            padding: padding ?? EdgeInsets.all(isSmallScreen ? 16 : 20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
+                  Colors.white.withOpacity(0.35),
                   Colors.white.withOpacity(0.25),
                   Colors.white.withOpacity(0.15),
-                  Colors.white.withOpacity(0.10),
+                  Colors.white.withOpacity(0.05),
                 ],
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(isSmallScreen ? 18 : 24),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
+                color: Colors.white.withOpacity(0.3),
+                width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
                 ),
                 BoxShadow(
-                  color: Colors.white.withOpacity(0.1),
-                  blurRadius: 15,
-                  offset: const Offset(-5, -5),
+                  color: Colors.white.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(-10, -10),
                 ),
               ],
             ),
@@ -252,46 +298,58 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
     );
   }
 
-  Widget _buildLoadingCard() {
+  Widget _buildLoadingCard(bool isSmallScreen) {
     return _buildGlassCard(
-      child: const Center(
+      isSmallScreen: isSmallScreen,
+      child: Center(
         child: Padding(
-          padding: EdgeInsets.all(40.0),
+          padding: EdgeInsets.all(isSmallScreen ? 30.0 : 40.0),
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            strokeWidth: 3,
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            strokeWidth: isSmallScreen ? 2.5 : 3,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildErrorCard(String message) {
+  Widget _buildErrorCard(String message, bool isSmallScreen) {
     return _buildGlassCard(
+      isSmallScreen: isSmallScreen,
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: isSmallScreen ? 45 : 50,
+            height: isSmallScreen ? 45 : 50,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
-                  Colors.red.withOpacity(0.8),
-                  Colors.redAccent.withOpacity(0.6),
+                  Colors.red.withOpacity(0.9),
+                  Colors.redAccent.withOpacity(0.7),
                 ],
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            child:
-                const Icon(Icons.error_outline, color: Colors.white, size: 24),
+            child: Icon(
+              Icons.error_outline,
+              color: Colors.white,
+              size: isSmallScreen ? 22 : 24,
+            ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: isSmallScreen ? 12 : 16),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: isSmallScreen ? 15 : 16,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -301,35 +359,37 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
     );
   }
 
-  Widget _buildNurseCard(UserModel nurse) {
+  Widget _buildNurseCard(UserModel nurse, bool isSmallScreen) {
     return _buildGlassCard(
+      isSmallScreen: isSmallScreen,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('مقدم الخدمة', Icons.medical_services),
-          const SizedBox(height: 20),
+          _buildSectionHeader(
+              'مقدم الخدمة', Icons.medical_services, isSmallScreen),
+          SizedBox(height: isSmallScreen ? 16 : 20),
           Row(
             children: [
               Container(
-                width: 70,
-                height: 70,
+                width: isSmallScreen ? 60 : 70,
+                height: isSmallScreen ? 60 : 70,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withOpacity(0.3),
-                      Colors.white.withOpacity(0.1),
+                      Colors.white.withOpacity(0.4),
+                      Colors.white.withOpacity(0.2),
                     ],
                   ),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.4),
-                    width: 2,
+                    color: Colors.white.withOpacity(0.5),
+                    width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
@@ -338,27 +398,40 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
                       ? Image.network(
                           nurse.profileImageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.person,
-                                  color: Colors.white, size: 35),
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: isSmallScreen ? 30 : 35,
+                          ),
                         )
-                      : const Icon(Icons.person, color: Colors.white, size: 35),
+                      : Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: isSmallScreen ? 30 : 35,
+                        ),
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: isSmallScreen ? 12 : 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       nurse.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: isSmallScreen ? 18 : 20,
                         fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.3),
+                            offset: const Offset(0, 1),
+                            blurRadius: 3,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: isSmallScreen ? 6 : 8),
                     Row(
                       children: [
                         RatingBarIndicator(
@@ -368,24 +441,33 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
                             color: Color(0xFFFFD700),
                           ),
                           itemCount: 5,
-                          itemSize: 22.0,
+                          itemSize: isSmallScreen ? 18.0 : 22.0,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: isSmallScreen ? 6 : 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSmallScreen ? 6 : 8,
+                            vertical: isSmallScreen ? 3 : 4,
                           ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            color: Colors.white.withOpacity(0.2),
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.3),
+                                Colors.white.withOpacity(0.1),
+                              ],
+                            ),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.4),
+                              width: 1,
+                            ),
                           ),
                           child: Text(
                             '(${nurse.ratingCount})',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withOpacity(0.95),
+                              fontSize: isSmallScreen ? 12 : 14,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -401,22 +483,25 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
     );
   }
 
-  Widget _buildOrderDetailsCard() {
+  Widget _buildOrderDetailsCard(bool isSmallScreen) {
     return _buildGlassCard(
+      isSmallScreen: isSmallScreen,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('تفاصيل طلبك', Icons.receipt_long),
-          const SizedBox(height: 20),
+          _buildSectionHeader('تفاصيل طلبك', Icons.receipt_long, isSmallScreen),
+          SizedBox(height: isSmallScreen ? 16 : 20),
           _buildDetailRow(
             Icons.tag,
             'رقم الطلب:',
             widget.order.id.substring(0, 8),
+            isSmallScreen: isSmallScreen,
           ),
           _buildDetailRow(
             Icons.calendar_today_rounded,
             'تاريخ الطلب:',
             formatDateTime(widget.order.orderDate),
+            isSmallScreen: isSmallScreen,
           ),
           _buildDetailRow(
             Icons.info_outline_rounded,
@@ -424,56 +509,85 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
             widget.order.status,
             statusColor: _getStatusColor(widget.order.status),
             showStatusBadge: true,
+            isSmallScreen: isSmallScreen,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isSmallScreen ? 16 : 20),
           _buildDivider(),
-          const SizedBox(height: 20),
+          SizedBox(height: isSmallScreen ? 16 : 20),
+          // ... في دالة _buildOrderDetailsCard
           _buildSectionHeader('الخدمات المطلوبة', Icons.medical_information,
+              isSmallScreen, // <-- تم وضعها هنا في الموضع الثالث
               isSubSection: true),
-          const SizedBox(height: 16),
-          ...widget.order.services.map((service) => _buildServiceItem(service)),
-          const SizedBox(height: 20),
+// ...
+          SizedBox(height: isSmallScreen ? 12 : 16),
+          ...widget.order.services
+              .map((service) => _buildServiceItem(service, isSmallScreen)),
+          SizedBox(height: isSmallScreen ? 16 : 20),
           _buildDivider(),
-          const SizedBox(height: 20),
-          _buildTotalRow(),
+          SizedBox(height: isSmallScreen ? 16 : 20),
+          _buildTotalRow(isSmallScreen),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon,
+  Widget _buildSectionHeader(String title, IconData icon, bool isSmallScreen,
       {bool isSubSection = false}) {
     return Row(
       children: [
         Container(
-          width: isSubSection ? 40 : 45,
-          height: isSubSection ? 40 : 45,
+          width: isSmallScreen
+              ? (isSubSection ? 35 : 40)
+              : (isSubSection ? 40 : 45),
+          height: isSmallScreen
+              ? (isSubSection ? 35 : 40)
+              : (isSubSection ? 40 : 45),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.3),
-                Colors.white.withOpacity(0.1),
+                Colors.white.withOpacity(0.4),
+                Colors.white.withOpacity(0.2),
               ],
             ),
             border: Border.all(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withOpacity(0.5),
               width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
           ),
           child: Icon(
             icon,
             color: Colors.white,
-            size: isSubSection ? 20 : 22,
+            size: isSmallScreen
+                ? (isSubSection ? 18 : 20)
+                : (isSubSection ? 20 : 22),
           ),
         ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: isSubSection ? 18 : 22,
-            fontWeight: FontWeight.bold,
+        SizedBox(width: isSmallScreen ? 10 : 12),
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: isSmallScreen
+                  ? (isSubSection ? 16 : 18)
+                  : (isSubSection ? 18 : 22),
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withOpacity(0.3),
+                  offset: const Offset(0, 1),
+                  blurRadius: 3,
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -486,180 +600,239 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
     String value, {
     Color? statusColor,
     bool showStatusBadge = false,
+    required bool isSmallScreen,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 10.0 : 12.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 35,
-            height: 35,
+            width: isSmallScreen ? 30 : 35,
+            height: isSmallScreen ? 30 : 35,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(isSmallScreen ? 8 : 10),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.25),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withOpacity(0.4),
                 width: 1,
               ),
             ),
-            child: Icon(icon, color: Colors.white.withOpacity(0.8), size: 18),
-          ),
-          const SizedBox(width: 16),
-          Text(
-            label,
-            style: TextStyle(
+            child: Icon(
+              icon,
               color: Colors.white.withOpacity(0.9),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              size: isSmallScreen ? 16 : 18,
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: isSmallScreen ? 12 : 16),
           Expanded(
-            child: showStatusBadge
-                ? _buildStatusBadge(value, statusColor!)
-                : Text(
-                    value,
-                    style: TextStyle(
-                      color: statusColor ?? Colors.white,
-                      fontSize: 16,
-                      fontWeight: statusColor != null
-                          ? FontWeight.bold
-                          : FontWeight.w500,
-                    ),
+            child: Row(
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.95),
+                    fontSize: isSmallScreen ? 14 : 16,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+                SizedBox(width: isSmallScreen ? 6 : 8),
+                Expanded(
+                  child: showStatusBadge
+                      ? Align(
+                          alignment: Alignment.centerLeft,
+                          child: _buildStatusBadge(
+                              value, statusColor!, isSmallScreen),
+                        )
+                      : Text(
+                          value,
+                          textAlign: TextAlign.left,
+                          style: TextStyle(
+                            color: statusColor ?? Colors.white,
+                            fontSize: isSmallScreen ? 14 : 16,
+                            fontWeight: statusColor != null
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                          ),
+                        ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusBadge(String status, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: color.withOpacity(0.2),
-        border: Border.all(
-          color: color.withOpacity(0.5),
-          width: 1.5,
-        ),
-      ),
-      child: Text(
-        _getStatusText(status),
-        style: TextStyle(
-          color: color,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildServiceItem(dynamic service) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        color: Colors.white.withOpacity(0.1),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.8),
+  Widget _buildStatusBadge(String status, Color color, bool isSmallScreen) {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: status == 'pending' ? _pulseAnimation.value : 1.0,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 10 : 12,
+              vertical: isSmallScreen ? 5 : 6,
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              service.name,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF00C9FF).withOpacity(0.3),
-                  const Color(0xFF92FE9D).withOpacity(0.3),
+                  color.withOpacity(0.9),
+                  color.withOpacity(0.5),
+                ],
+              ),
+              border: Border.all(
+                color: color.withOpacity(0.1),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.9),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Text(
+              _getStatusText(status),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 12 : 14,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: color.withOpacity(0.8),
+                    offset: const Offset(0, 1),
+                    blurRadius: 2,
+                  ),
                 ],
               ),
             ),
-            child: Text(
-              '${service.price.toStringAsFixed(2)} جنيه',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildTotalRow() {
+  Widget _buildServiceItem(dynamic service, bool isSmallScreen) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(bottom: isSmallScreen ? 10 : 12),
+      padding: EdgeInsets.all(isSmallScreen ? 14 : 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 15),
         gradient: LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.25),
-            Colors.white.withOpacity(0.15),
+            Colors.white.withOpacity(0.2),
+            Colors.white.withOpacity(0.1),
           ],
         ),
         border: Border.all(
           color: Colors.white.withOpacity(0.3),
           width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: isSmallScreen ? 6 : 8,
+            height: isSmallScreen ? 6 : 8,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              shape: BoxShape.circle,
               gradient: const LinearGradient(
-                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                colors: [Color(0xFF00D2FF), Color(0xFF3A7BD5)],
               ),
             ),
-            child:
-                const Icon(Icons.attach_money, color: Colors.white, size: 22),
           ),
-          const SizedBox(width: 16),
-          const Text(
-            'الإجمالي:',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          SizedBox(width: isSmallScreen ? 10 : 12),
+          Expanded(
+            child: Text(
+              service.name,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.95),
+                fontSize: isSmallScreen ? 14 : 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          const Spacer(),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 10 : 12,
+              vertical: isSmallScreen ? 5 : 6,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF00C9FF),
+                  Color(0xFF92FE9D),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF00C9FF).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Text(
+              '${service.price.toStringAsFixed(2)} جنيه',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 12 : 14,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    offset: const Offset(0, 1),
+                    blurRadius: 2,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalRow(bool isSmallScreen) {
+    return Container(
+      // ... decoration code ...
+      child: Row(
+        children: [
+          // ... Icon and SizedBox code ...
           Text(
-            '${widget.order.totalPrice.toStringAsFixed(2)} جنيه مصري',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+            'الإجمالي:',
+            style: TextStyle(
+                // ... style code ...
+                ),
+          ),
+          const Spacer(),
+          // تم تطبيق الحل هنا
+          Flexible(
+            // <-- الخطوة 1: أضفنا Flexible
+            child: Text(
+              '${widget.order.totalPrice.toStringAsFixed(2)} جنيه مصري',
+              textAlign: TextAlign
+                  .right, // قد تحتاج لإضافة هذا لضمان محاذاة النص لليمين
+              style: TextStyle(
+                  // ... style code ...
+                  ),
             ),
           ),
         ],
@@ -669,12 +842,15 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
 
   Widget _buildDivider() {
     return Container(
-      height: 1,
+      height: 2,
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(1),
         gradient: LinearGradient(
           colors: [
             Colors.transparent,
-            Colors.white.withOpacity(0.3),
+            Colors.white.withOpacity(0.4),
+            Colors.white.withOpacity(0.6),
+            Colors.white.withOpacity(0.4),
             Colors.transparent,
           ],
         ),
@@ -682,83 +858,120 @@ class _PatientOrderDetailsScreenState extends State<PatientOrderDetailsScreen>
     );
   }
 
-  Widget _buildRatingButton() {
-    return Container(
-      width: double.infinity,
-      height: 60,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFFD700),
-            Color(0xFFFFA500),
-            Color(0xFFFF6B35),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF6B35).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => LeaveReviewScreen(order: widget.order),
-              ),
-            );
-          },
+  Widget _buildRatingButton(bool isSmallScreen) {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _pulseAnimation.value,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 35,
-                  height: 35,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.2),
-                  ),
-                  child: const Icon(Icons.star_rounded,
-                      color: Colors.white, size: 22),
+            width: double.infinity,
+            height: isSmallScreen ? 55 : 60,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(isSmallScreen ? 18 : 20),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFFFD700),
+                  Color(0xFFFFA500),
+                  Color(0xFFFF8C00),
+                  Color(0xFFFF6B35),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF6B35).withOpacity(0.5),
+                  blurRadius: 25,
+                  offset: const Offset(0, 12),
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  'قيّم الخدمة الآن',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(isSmallScreen ? 18 : 20),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          LeaveReviewScreen(order: widget.order),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: isSmallScreen ? 16 : 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: isSmallScreen ? 30 : 35,
+                        height: isSmallScreen ? 30 : 35,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.3),
+                              Colors.white.withOpacity(0.1),
+                            ],
+                          ),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.4),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.star_rounded,
+                          color: Colors.white,
+                          size: isSmallScreen ? 18 : 22,
+                        ),
+                      ),
+                      SizedBox(width: isSmallScreen ? 10 : 12),
+                      Text(
+                        'قيّم الخدمة الآن',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 16 : 18,
+                          fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.3),
+                              offset: const Offset(0, 2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Color _getStatusColor(String status) {
     switch (status) {
       case 'pending':
-        return const Color(0xFFFF9500);
+        return const Color.fromARGB(255, 255, 149, 0); // Orange - more vibrant
       case 'accepted':
-        return const Color(0xFF007AFF);
+        return const Color(0xFF007AFF); // Blue - iOS blue
       case 'completed':
-        return const Color(0xFF34C759);
+        return const Color(0xFF34C759); // Green - iOS green
       case 'rejected':
-        return const Color(0xFFFF3B30);
+        return const Color(0xFFFF3B30); // Red - iOS red
       default:
-        return const Color(0xFF8E8E93);
+        return const Color(0xFF8E8E93); // Gray
     }
   }
 

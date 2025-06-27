@@ -1,3 +1,4 @@
+import 'package:cure_app/screens/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -127,6 +128,7 @@ class MyApp extends StatelessWidget {
           cartRoute: (context) => const CartScreen(),
           ordersRoute: (context) => const OrdersScreen(),
           profileRoute: (context) => const ProfileScreen(),
+          editProfileRoute: (context) => const EditProfileScreen(),
 
           // ✅ مسار تتبع الطلب
           '/order-tracking': (context) {

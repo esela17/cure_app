@@ -7,12 +7,25 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:997897806633:android:d2a8ef602ceb7aff9acd38",
+        "mobilesdk_app_id": "1:997897806633:android:f2386dbbd59ce72a9acd38",
         "android_client_info": {
-          "package_name": "com.example.cure_app"
+          "package_name": "com.example.cure"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "997897806633-j5cca9abi6b19rtsc1b1k2oum5oomq4s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cure",
+            "certificate_hash": "711ae60f8718bf9d6c74512d75d6b46cd6f8b9ba"
+          }
+        },
+        {
+          "client_id": "997897806633-uskjdj051k81ljv6qgtc2buke4jppcq6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCRYWd5v-do4DNmovzppyHnzPM71JPr0bU"
@@ -20,7 +33,63 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "997897806633-uskjdj051k81ljv6qgtc2buke4jppcq6.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "997897806633-235ns0u8s9t00gmv7i98pnnchmcqee5o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cure"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:997897806633:android:d2a8ef602ceb7aff9acd38",
+        "android_client_info": {
+          "package_name": "com.example.cure_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "997897806633-pefbihbo109bmvtipo9n7hrm1r1k6ln5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cure_app",
+            "certificate_hash": "de9e99b55ecb768db1bc6fabb9d835186e0eeada"
+          }
+        },
+        {
+          "client_id": "997897806633-uskjdj051k81ljv6qgtc2buke4jppcq6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRYWd5v-do4DNmovzppyHnzPM71JPr0bU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "997897806633-uskjdj051k81ljv6qgtc2buke4jppcq6.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "997897806633-235ns0u8s9t00gmv7i98pnnchmcqee5o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cure"
+              }
+            }
+          ]
         }
       }
     }

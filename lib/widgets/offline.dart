@@ -5,7 +5,7 @@ import 'dart:async';
 class OfflineBanner extends StatefulWidget {
   final Widget child;
 
-  const OfflineBanner({Key? key, required this.child}) : super(key: key);
+  const OfflineBanner({super.key, required this.child});
 
   @override
   State<OfflineBanner> createState() => _OfflineBannerState();
@@ -100,6 +100,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -112,6 +114,8 @@ class MyApp extends StatelessWidget {
 }
 
 class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

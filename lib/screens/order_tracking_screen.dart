@@ -1,11 +1,11 @@
-// تم إصلاح جميع المشاكل وتحسين التصميم
+// ------------ بداية الكود الكامل لملف order_tracking_screen.dart ------------
 
 import 'dart:async';
 import 'package:cure_app/models/order.dart';
 import 'package:cure_app/providers/active_order_provider.dart';
 import 'package:cure_app/screens/home_screen.dart';
 import 'package:cure_app/screens/leave_review_screen.dart';
-import 'package:cure_app/screens/report.dart';
+import 'package:cure_app/screens/report.dart'; // تأكد من أن اسم ملف الشكوى صحيح
 import 'package:cure_app/services/firestore_service.dart';
 import 'package:cure_app/utils/constants.dart';
 import 'package:cure_app/widgets/loading_indicator.dart';
@@ -46,7 +46,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     if (clearActiveOrder) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('activeOrderId');
-
       final activeOrderProvider =
           Provider.of<ActiveOrderProvider>(context, listen: false);
       activeOrderProvider.clearActiveOrder();
@@ -89,19 +88,34 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             .updateOrderStatus(widget.orderId, {'status': 'cancelled'});
         await _clearActiveOrderAndExit();
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('فشل في إلغاء الطلب: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('فشل في إلغاء الطلب: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
 
-  void _navigateToReport() {
+  // --- (تم تعديل هذه الدالة) ---
+  void _navigateToReport(Order order) {
+    if (order.nurseId == null || order.nurseId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('لا يمكن الإبلاغ عن مشكلة لطلب بدون ممرض.')),
+      );
+      return;
+    }
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ReportScreen()),
+      MaterialPageRoute(
+        builder: (_) => ReportScreen(
+          nurseId: order.nurseId!,
+          orderId: order.id,
+        ),
+      ),
     );
   }
 
@@ -145,45 +159,28 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
-          title: const Text(
-            'تتبع الطلب',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-            ),
-          ),
+          title: const Text('تتبع الطلب',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22)),
           backgroundColor: kPrimaryColor,
           elevation: 0,
           automaticallyImplyLeading: false,
           centerTitle: true,
         ),
-        body: StreamBuilder<Order>(
+        body: StreamBuilder<Order?>(
+          // تم التعديل إلى Order? للتعامل مع عدم وجود الطلب
           stream: firestoreService.getOrderStream(widget.orderId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const LoadingIndicator();
             }
             if (snapshot.hasError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text('حدث خطأ: ${snapshot.error}'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => setState(() {}),
-                      child: const Text('إعادة المحاولة'),
-                    ),
-                  ],
-                ),
-              );
+              return Center(child: Text('حدث خطأ: ${snapshot.error}'));
             }
-            if (!snapshot.hasData) {
-              return const Center(child: Text('الطلب غير موجود.'));
+            if (!snapshot.hasData || snapshot.data == null) {
+              return const Center(child: Text('الطلب غير موجود أو تم حذفه.'));
             }
 
             final order = snapshot.data!;
@@ -202,10 +199,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 
+  // --- (تم تعديل هذه الدالة) ---
   Widget _buildOrderStatusView(Order order, FirestoreService firestoreService) {
     switch (order.status) {
       case 'pending':
         return _buildStatusView(
+          order: order, // <-- تم تمرير الطلب هنا
           customWidget: const RippleAnimation(
             color: kPrimaryColor,
             child: Icon(Icons.search, color: Colors.white, size: 50),
@@ -219,17 +218,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           statusBadgeColor: Colors.orange,
           showCancelButton: true,
           actions: [
-            _styledButton(
-              'العودة إلى الرئيسية',
-              () => _clearActiveOrderAndExit(clearActiveOrder: false),
-              color: kPrimaryColor,
-              icon: Icons.home,
-            ),
+            _styledButton('العودة إلى الرئيسية',
+                () => _clearActiveOrderAndExit(clearActiveOrder: false),
+                color: kPrimaryColor, icon: Icons.home)
           ],
         );
 
       case 'accepted':
         return _buildStatusView(
+          order: order, // <-- تم تمرير الطلب هنا
           icon: Icons.directions_car_outlined,
           color: const Color(0xFF4CAF50),
           title: 'الممرض في الطريق إليك',
@@ -242,16 +239,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           showCancelButton: true,
           isReportCancel: true,
           actions: [
-            _outlinedButton(
-              'العودة إلى الرئيسية',
-              () => _clearActiveOrderAndExit(clearActiveOrder: false),
-              icon: Icons.home_outlined,
-            ),
+            _outlinedButton('العودة إلى الرئيسية',
+                () => _clearActiveOrderAndExit(clearActiveOrder: false),
+                icon: Icons.home_outlined)
           ],
         );
 
       case 'arrived':
         return _buildStatusView(
+          order: order, // <-- تم تمرير الطلب هنا
           icon: Icons.location_on,
           color: Colors.blue,
           title: 'الممرض وصل إلى موقعك',
@@ -262,16 +258,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           statusBadge: 'وصل الممرض',
           statusBadgeColor: Colors.blue,
           actions: [
-            _outlinedButton(
-              'العودة إلى الرئيسية',
-              () => _clearActiveOrderAndExit(clearActiveOrder: false),
-              icon: Icons.home_outlined,
-            ),
+            _outlinedButton('العودة إلى الرئيسية',
+                () => _clearActiveOrderAndExit(clearActiveOrder: false),
+                icon: Icons.home_outlined)
           ],
         );
 
       case 'completed':
         return _buildStatusView(
+          order: order, // <-- تم تمرير الطلب هنا
           icon: Icons.check_circle,
           color: Colors.green,
           title: 'تم إكمال الخدمة بنجاح',
@@ -282,23 +277,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           statusBadge: 'مكتمل',
           statusBadgeColor: Colors.green,
           actions: [
-            _styledButton(
-              'تقييم الخدمة',
-              () => _navigateToReview(order),
-              color: kPrimaryColor,
-              icon: Icons.star_outline,
-            ),
+            _styledButton('تقييم الخدمة', () => _navigateToReview(order),
+                color: kPrimaryColor, icon: Icons.star_outline),
             const SizedBox(height: 12),
             _outlinedButton(
-              'العودة إلى الرئيسية',
-              () => _clearActiveOrderAndExit(),
-              icon: Icons.home_outlined,
-            ),
+                'العودة إلى الرئيسية', () => _clearActiveOrderAndExit(),
+                icon: Icons.home_outlined),
           ],
         );
 
       case 'cancelled':
         return _buildStatusView(
+          order: order, // <-- تم تمرير الطلب هنا
           icon: Icons.cancel_outlined,
           color: Colors.red,
           title: 'تم إلغاء الطلب',
@@ -309,17 +299,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           statusBadge: 'ملغي',
           statusBadgeColor: Colors.red,
           actions: [
-            _styledButton(
-              'طلب جديد',
-              () => _clearActiveOrderAndExit(),
-              color: kPrimaryColor,
-              icon: Icons.add,
-            ),
+            _styledButton('طلب جديد', () => _clearActiveOrderAndExit(),
+                color: kPrimaryColor, icon: Icons.add)
           ],
         );
 
       default:
         return _buildStatusView(
+          order: order, // <-- تم تمرير الطلب هنا
           icon: Icons.info_outline,
           color: Colors.grey,
           title: 'حالة الطلب: ${order.status}',
@@ -332,10 +319,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           statusBadgeColor: Colors.grey,
           actions: [
             _outlinedButton(
-              'العودة إلى الرئيسية',
-              () => _clearActiveOrderAndExit(),
-              icon: Icons.home_outlined,
-            ),
+                'العودة إلى الرئيسية', () => _clearActiveOrderAndExit(),
+                icon: Icons.home_outlined)
           ],
         );
     }
@@ -343,58 +328,38 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
 
   Widget? _buildNurseNameWidget(String? nurseName) {
     if (nurseName == null || nurseName.isEmpty) return null;
-
     final isArabic = _isArabicName(nurseName);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (isArabic) ...[
-          Text(
-            'الممرض: ',
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      if (isArabic) ...[
+        Text('الممرض: ',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-          Text(
-            nurseName,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600])),
+        Text(nurseName,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: kPrimaryColor,
-            ),
-          ),
-        ] else ...[
-          Text(
-            nurseName,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: kPrimaryColor)),
+      ] else ...[
+        Text(nurseName,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: kPrimaryColor,
-            ),
-          ),
-          Text(
-            ' :الممرض',
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: kPrimaryColor)),
+        Text(' :الممرض',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600])),
       ],
-    );
+    ]);
   }
 
   void _navigateToReview(Order order) {
     Navigator.of(context)
         .push(
-      MaterialPageRoute(
-        builder: (_) => LeaveReviewScreen(order: order),
-      ),
-    )
+            MaterialPageRoute(builder: (_) => LeaveReviewScreen(order: order)))
         .then((_) {
       _clearActiveOrderAndExit();
     });
@@ -409,61 +374,50 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (color ?? kPrimaryColor).withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
+              color: (color ?? kPrimaryColor).withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4))
         ],
       ),
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
           backgroundColor: color ?? kPrimaryColor,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,
         ),
         onPressed: onPressed,
         icon: Icon(icon ?? Icons.check, size: 20),
-        label: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        label: Text(label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       ),
     );
   }
 
   Widget _outlinedButton(String label, VoidCallback onPressed,
       {IconData? icon}) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 48,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           foregroundColor: kPrimaryColor,
           side: BorderSide(color: kPrimaryColor.withOpacity(0.3), width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onPressed: onPressed,
         icon: Icon(icon ?? Icons.arrow_back, size: 18),
-        label: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        label: Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       ),
     );
   }
 
+  // --- (تم تعديل هذه الدالة) ---
   Widget _buildStatusView({
+    required Order order, // <-- تمت إضافة الطلب هنا كمتطلب
     Widget? customWidget,
     IconData? icon,
     required String title,
@@ -485,36 +439,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           padding: const EdgeInsets.all(20.0),
           child: Column(
             children: [
-              // شريط التقدم
+              // Progress Bar
               Container(
                 width: double.infinity,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Stack(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 1000),
-                      width: MediaQuery.of(context).size.width * 0.9 * progress,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            progressColor ?? kPrimaryColor,
-                            (progressColor ?? kPrimaryColor).withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(4)),
+                child: Stack(children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 1000),
+                    width: MediaQuery.of(context).size.width * 0.9 * progress,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        progressColor ?? kPrimaryColor,
+                        (progressColor ?? kPrimaryColor).withOpacity(0.7),
+                      ]),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  ],
-                ),
+                  ),
+                ]),
               ),
               const SizedBox(height: 24),
 
-              // المحتوى الرئيسي
+              // Main Content
               Stack(
                 children: [
                   Container(
@@ -524,16 +473,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
+                            color: Colors.grey.withOpacity(0.1),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5))
                       ],
                     ),
                     padding: const EdgeInsets.all(32.0),
                     child: Column(
                       children: [
-                        // شارة الحالة
                         if (statusBadge != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -542,23 +489,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                               color: statusBadgeColor?.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(25),
                               border: Border.all(
-                                color: statusBadgeColor?.withOpacity(0.3) ??
-                                    Colors.grey,
-                                width: 1,
-                              ),
+                                  color: statusBadgeColor?.withOpacity(0.3) ??
+                                      Colors.grey,
+                                  width: 1),
                             ),
-                            child: Text(
-                              statusBadge,
-                              style: TextStyle(
-                                color: statusBadgeColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child: Text(statusBadge,
+                                style: TextStyle(
+                                    color: statusBadgeColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600)),
                           ),
                         const SizedBox(height: 24),
-
-                        // الأيقونة
                         customWidget ??
                             Container(
                               width: 80,
@@ -568,49 +509,33 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                     (color ?? kPrimaryColor).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(40),
                               ),
-                              child: Icon(
-                                icon ?? Icons.info,
-                                size: 40,
-                                color: color ?? kPrimaryColor,
-                              ),
+                              child: Icon(icon ?? Icons.info,
+                                  size: 40, color: color ?? kPrimaryColor),
                             ),
                         const SizedBox(height: 24),
-
-                        // العنوان
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            height: 1.3,
-                            color: Colors.black87,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-
-                        // العنوان الفرعي
+                        Text(title,
+                            style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                height: 1.3,
+                                color: Colors.black87),
+                            textAlign: TextAlign.center),
                         if (subtitle != null) ...[
                           const SizedBox(height: 12),
-                          subtitle!,
+                          subtitle,
                         ],
-
                         const SizedBox(height: 16),
-
-                        // الرسالة
-                        Text(
-                          message,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                            height: 1.5,
-                          ),
-                        ),
+                        Text(message,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                                height: 1.5)),
                       ],
                     ),
                   ),
 
-                  // زر الإلغاء الدائري
+                  // Cancel/Report Button
                   if (showCancelButton)
                     Positioned(
                       top: 16,
@@ -622,20 +547,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                           color: Colors.red.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: Colors.red.withOpacity(0.3),
-                            width: 1,
-                          ),
+                              color: Colors.red.withOpacity(0.3), width: 1),
                         ),
                         child: IconButton(
-                          onPressed:
-                              isReportCancel ? _navigateToReport : _cancelOrder,
+                          // --- (وهنا يتم استدعاء الدالة المعدلة بشكل صحيح) ---
+                          onPressed: isReportCancel
+                              ? () => _navigateToReport(order)
+                              : _cancelOrder,
                           icon: Icon(
-                            isReportCancel
-                                ? Icons.report_outlined
-                                : Icons.close,
-                            color: Colors.red,
-                            size: 18,
-                          ),
+                              isReportCancel
+                                  ? Icons.report_outlined
+                                  : Icons.close,
+                              color: Colors.red,
+                              size: 18),
                           padding: EdgeInsets.zero,
                           tooltip:
                               isReportCancel ? 'إبلاغ عن مشكلة' : 'إلغاء الطلب',
@@ -645,7 +569,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                 ],
               ),
 
-              // الأزرار
+              // Action Buttons
               if (actions != null) ...[
                 const SizedBox(height: 24),
                 ...actions,
@@ -657,3 +581,5 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 }
+
+// ------------ نهاية الكود الكامل لملف order_tracking_screen.dart ------------

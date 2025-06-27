@@ -75,11 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverToBoxAdapter(
                     child: Consumer<AdsProvider>(
                       builder: (context, adsProvider, _) {
-                        if (adsProvider.ads.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
+                        if (adsProvider.ads.isEmpty) {}
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          padding: const EdgeInsets.symmetric(vertical: 0.0),
                           child: AdsBannerWidget(ads: adsProvider.ads),
                         );
                       },
@@ -101,8 +99,8 @@ class _HomeScreenState extends State<HomeScreen> {
               if (activeOrderProvider.activeOrder != null)
                 Positioned(
                   bottom: cartProvider.cartItems.isNotEmpty ? 100 : 20,
-                  left: 16,
-                  right: 16,
+                  left: 10,
+                  right: 10,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(
@@ -171,8 +169,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildFloatingCartBanner(CartProvider cartProvider) {
     return Positioned(
       bottom: 20,
-      left: 16,
-      right: 16,
+      left: 10,
+      right: 10,
       child: GestureDetector(
         onTap: () {
           Navigator.pushNamed(context, cartRoute);

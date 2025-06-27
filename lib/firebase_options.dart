@@ -6,14 +6,7 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
+
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -64,8 +57,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '997897806633',
     projectId: 'cure-app-ddfd9',
     storageBucket: 'cure-app-ddfd9.firebasestorage.app',
-    androidClientId: '997897806633-cv758fcn80ijang5198d1qpv83m6bh67.apps.googleusercontent.com',
-    iosClientId: '997897806633-5ni700nv2jmak77tmsprsshft6kvn0me.apps.googleusercontent.com',
+    androidClientId:
+        '997897806633-cv758fcn80ijang5198d1qpv83m6bh67.apps.googleusercontent.com',
+    iosClientId:
+        '997897806633-5ni700nv2jmak77tmsprsshft6kvn0me.apps.googleusercontent.com',
     iosBundleId: 'com.example.cureApp',
   );
 
@@ -75,8 +70,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '997897806633',
     projectId: 'cure-app-ddfd9',
     storageBucket: 'cure-app-ddfd9.firebasestorage.app',
-    androidClientId: '997897806633-cv758fcn80ijang5198d1qpv83m6bh67.apps.googleusercontent.com',
-    iosClientId: '997897806633-5ni700nv2jmak77tmsprsshft6kvn0me.apps.googleusercontent.com',
+    androidClientId:
+        '997897806633-cv758fcn80ijang5198d1qpv83m6bh67.apps.googleusercontent.com',
+    iosClientId:
+        '997897806633-5ni700nv2jmak77tmsprsshft6kvn0me.apps.googleusercontent.com',
     iosBundleId: 'com.example.cureApp',
   );
 
@@ -89,5 +86,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'cure-app-ddfd9.firebasestorage.app',
     measurementId: 'G-YDV3XKG2CR',
   );
-
 }

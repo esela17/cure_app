@@ -14,7 +14,12 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDQb4KO2_OtOvhpZbM_GZ5A4HzgKVTE5e8" />
 
-        <!-- Firebase Notification Channel (اختياري) -->
+        <!-- ✅ Google Sign-In -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+        <!-- Firebase Notification Channel -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="default_channel_id"/>

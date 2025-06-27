@@ -1,9 +1,12 @@
+// ------------ بداية الكود الكامل لملف NurseHomeScreen.dart ------------
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cure_app/providers/auth_provider.dart';
 import 'package:cure_app/providers/nurse_provider.dart';
 import 'package:cure_app/screens/nurse/nurse_orders_history_screen.dart';
 import 'package:cure_app/screens/nurse/pending_orders_screen.dart';
 import 'package:cure_app/screens/nurse/nurse_reviews_screen.dart';
-import 'package:cure_app/screens/nurse/nurse_reports_screen.dart'; // استيراد شاشة الشكاوي
+import 'package:cure_app/screens/nurse/nurse_reports_screen.dart';
 import 'package:cure_app/utils/constants.dart';
 import 'package:cure_app/widgets/dashboard_card.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +23,7 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
   @override
   void initState() {
     super.initState();
+    // تأجيل التنفيذ لضمان أن context متاح
     Future.delayed(Duration.zero, () {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final nurseProvider = Provider.of<NurseProvider>(context, listen: false);
@@ -41,6 +45,7 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
           appBar: AppBar(
             title: const Text('مركز العمليات',
                 style: TextStyle(color: Colors.white)),
+            backgroundColor: kPrimaryColor,
             actions: [
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
@@ -57,8 +62,7 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
                 Card(
                   elevation: 4,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
+                      borderRadius: BorderRadius.circular(15)),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -114,11 +118,10 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
                       count: nurseProvider.pendingOrdersCount.toString(),
                       onTap: () {
                         Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const PendingOrdersScreen()),
-                        );
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const PendingOrdersScreen()));
                       },
                     ),
                     DashboardCard(
@@ -127,11 +130,10 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
                       count: nurseProvider.acceptedOrdersCount.toString(),
                       onTap: () {
                         Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const NurseOrdersHistoryScreen()),
-                        );
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const NurseOrdersHistoryScreen()));
                       },
                     ),
                     DashboardCard(
@@ -157,23 +159,46 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
                       count: nurseProvider.completedOrdersCount.toString(),
                       onTap: () {
                         Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const NurseOrdersHistoryScreen()),
-                        );
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const NurseOrdersHistoryScreen()));
                       },
                     ),
-                    // بطاقة الشكاوى الجديدة
-                    DashboardCard(
-                      icon: Icons.report_outlined,
-                      title: 'الشكاوى',
-                      count: '',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const NurseReportsScreen()),
+
+                    // --- (هذا هو الجزء الذي تم إصلاحه بالكامل) ---
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('reports')
+                          .where('nurseId',
+                              isEqualTo: authProvider.currentUser?.uid)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        String reportCount = '...';
+                        if (snapshot.connectionState ==
+                                ConnectionState.active &&
+                            snapshot.hasData) {
+                          reportCount = snapshot.data!.docs.length.toString();
+                        } else if (snapshot.hasError) {
+                          reportCount = '!';
+                        }
+
+                        return DashboardCard(
+                          icon: Icons.report_outlined,
+                          title: 'الشكاوى',
+                          count: reportCount,
+                          onTap: () {
+                            if (authProvider.currentUser != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NurseReportsScreen(
+                                    nurseId: authProvider.currentUser!.uid,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
                         );
                       },
                     ),
@@ -230,3 +255,4 @@ class _NurseHomeScreenState extends State<NurseHomeScreen> {
     );
   }
 }
+// ------------ نهاية الكود الكامل لملف NurseHomeScreen.dart ------------

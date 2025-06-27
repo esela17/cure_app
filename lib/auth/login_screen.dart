@@ -591,7 +591,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Widget _buildGoogleSignInButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 55,
       child: OutlinedButton.icon(
